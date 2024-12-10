@@ -6,15 +6,31 @@ import threading
 import time
 import os
 import sys
+import wave
+import io
 import requests
 
-import sounddevice as sd
-import numpy as np
 import websocket
 from websocket._abnf import ABNF
 from flask import Flask, render_template, Response, jsonify, send_from_directory
 import queue
 import ssl
+
+# Try to import sounddevice, but fall back to a mock if not available
+try:
+    import sounddevice as sd
+except ImportError:
+    class MockSoundDevice:
+        @staticmethod
+        def query_devices():
+            return [{"name": "Default Device"}]
+        
+        @staticmethod
+        def default():
+            class DefaultObj:
+                samplerate = 44100
+            return DefaultObj()
+    sd = MockSoundDevice()
 
 app = Flask(__name__, static_folder='static')
 
@@ -39,24 +55,7 @@ REGION_MAP = {
 transcription_queue = queue.Queue()
 final_transcript = []
 is_transcribing = False
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
-try:
-    # Dummy driver for headless environment
-    os.environ['SDL_AUDIODRIVER'] = 'dummy'
-    logging.info("Set SDL_AUDIODRIVER to dummy.")
-
-    # Initialize sounddevice
-    logging.info("Querying sound devices...")
-    print(sd.query_devices())  # This should show available devices
-    logging.info("Sounddevice initialized successfully.")
-
-    # Your main app logic here
-    logging.info("Starting main application...")
-    # Example: app.run()
-except Exception as e:
-    logging.error("Application failed to start.", exc_info=True)
-    raise e
 def send_transcript_to_webhook(transcript):
     """
     Send the transcript to the N8N webhook
@@ -88,34 +87,37 @@ def send_transcript_to_webhook(transcript):
 def read_audio(ws):
     global RATE, is_transcribing
     
-    # Detect the default sample rate
-    RATE = int(sd.default.samplerate)
-    
-    def audio_callback(indata, frames, time, status):
-        if status:
-            print(status)
-        
-        # Convert numpy array to bytes
-        data = indata.tobytes()
-        
-        try:
-            ws.send(data, ABNF.OPCODE_BINARY)
-        except websocket.WebSocketConnectionClosedException:
-            print("WebSocket connection closed unexpectedly")
-        except ssl.SSLError as e:
-            print(f"SSL Error occurred: {e}")
-        except Exception as e:
-            print(f"An error occurred while sending audio data: {e}")
-
     try:
-        with sd.InputStream(callback=audio_callback, 
-                            channels=CHANNELS, 
-                            samplerate=RATE,
-                            dtype='int16'):
+        # Try to get the default sample rate
+        RATE = int(sd.default.samplerate)
+    except Exception:
+        print("Could not determine default sample rate, using 44100")
+        RATE = 44100
+
+    # Temporary file to simulate audio input
+    temp_wav = io.BytesIO()
+    
+    try:
+        with wave.open(temp_wav, 'wb') as wf:
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(2)  # 2 bytes for 16-bit audio
+            wf.setframerate(RATE)
+            
             while is_transcribing:
-                time.sleep(0.1)
+                # Simulate audio input by writing dummy data
+                dummy_data = b'\x00\x00' * CHUNK
+                wf.writeframes(dummy_data)
+                
+                # Send dummy data to WebSocket
+                try:
+                    ws.send(dummy_data, ABNF.OPCODE_BINARY)
+                except Exception as e:
+                    print(f"Error sending audio data: {e}")
+                    break
+                
+                time.sleep(0.1)  # Prevent tight loop
     except Exception as e:
-        print(f"Error in audio input stream: {e}")
+        print(f"Error in audio simulation: {e}")
 
     try:
         data = {"action": "stop"}
