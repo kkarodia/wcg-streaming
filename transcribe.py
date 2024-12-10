@@ -235,5 +235,10 @@ def clear_transcript():
     return jsonify({"status": "Transcript cleared"})
 
 if __name__ == "__main__":
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    try:
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        logging.error("Application failed to start.", exc_info=True)
