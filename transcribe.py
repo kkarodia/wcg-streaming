@@ -215,19 +215,6 @@ def clear_transcript():
     final_transcript = []
     return jsonify({"status": "Transcript cleared"})
 
-def test_audio():
-    duration = 2  # seconds
-    samplerate = 44100  # Hz
-    print("Testing sounddevice...")
-    try:
-        # Generate a simple sine wave
-        t = np.linspace(0, duration, int(samplerate * duration), False)  # Time axis
-        tone = 0.5 * np.sin(2 * np.pi * 440 * t)  # A4 note
-        sd.play(tone, samplerate=samplerate)
-        sd.wait()  # Wait until playback is finished
-        print("Audio test complete.")
-    except Exception as e:
-        print(f"Error with sounddevice: {e}")
-
 if __name__ == "__main__":
-    test_audio()
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=False)
