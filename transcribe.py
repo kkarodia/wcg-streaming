@@ -6,9 +6,10 @@ import threading
 import time
 import os
 import sys
-import requests  # Add this import
+import requests
 
-import pyaudio
+import sounddevice as sd
+import numpy as np
 import websocket
 from websocket._abnf import ABNF
 from flask import Flask, render_template, Response, jsonify, send_from_directory
@@ -18,7 +19,6 @@ import ssl
 app = Flask(__name__, static_folder='static')
 
 CHUNK = 1024
-FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 FINALS = []
@@ -70,32 +70,35 @@ def send_transcript_to_webhook(transcript):
 
 def read_audio(ws):
     global RATE, is_transcribing
-    p = pyaudio.PyAudio()
-    RATE = int(p.get_default_input_device_info()['defaultSampleRate'])
-    stream = p.open(format=FORMAT,
-                    channels=CHANNELS,
-                    rate=RATE,
-                    input=True,
-                    frames_per_buffer=CHUNK)
-
-    print("* recording")
-    while is_transcribing:
+    
+    # Detect the default sample rate
+    RATE = int(sd.default.samplerate)
+    
+    def audio_callback(indata, frames, time, status):
+        if status:
+            print(status)
+        
+        # Convert numpy array to bytes
+        data = indata.tobytes()
+        
         try:
-            data = stream.read(CHUNK)
             ws.send(data, ABNF.OPCODE_BINARY)
         except websocket.WebSocketConnectionClosedException:
             print("WebSocket connection closed unexpectedly")
-            break
         except ssl.SSLError as e:
             print(f"SSL Error occurred: {e}")
-            break
         except Exception as e:
             print(f"An error occurred while sending audio data: {e}")
-            break
 
-    stream.stop_stream()
-    stream.close()
-    print("* done recording")
+    try:
+        with sd.InputStream(callback=audio_callback, 
+                            channels=CHANNELS, 
+                            samplerate=RATE,
+                            dtype='int16'):
+            while is_transcribing:
+                time.sleep(0.1)
+    except Exception as e:
+        print(f"Error in audio input stream: {e}")
 
     try:
         data = {"action": "stop"}
@@ -108,7 +111,6 @@ def read_audio(ws):
         ws.close()
     except:
         print("Failed to close WebSocket")
-    p.terminate()
 
 def on_message(ws, msg):
     global final_transcript
