@@ -1,3 +1,4 @@
 --no-binary :all: pyaudio
 websocket-client
 flask
+requests
