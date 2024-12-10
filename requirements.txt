@@ -1,4 +1,4 @@
-pyaudio
+sounddevice
 websocket-client
 flask
 requests
