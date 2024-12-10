@@ -1,5 +1,6 @@
 import setuptools
 import os
+import sys
 
 try:
     import multiprocessing  # noqa
@@ -7,18 +8,37 @@ except ImportError:
     pass
 
 # Determine PortAudio include and library paths
-portaudio_include_path = "/usr/include/portaudio2"
-portaudio_lib_path = "/usr/lib/x86_64-linux-gnu"
+portaudio_include_paths = [
+    "/usr/include/portaudio2",
+    "/usr/include",
+    "/usr/local/include"
+]
 
-# Check if paths exist, otherwise use system defaults
-if not os.path.exists(portaudio_include_path):
-    portaudio_include_path = "/usr/include"
-if not os.path.exists(portaudio_lib_path):
-    portaudio_lib_path = "/usr/lib"
+portaudio_lib_paths = [
+    "/usr/lib/x86_64-linux-gnu",
+    "/usr/lib",
+    "/usr/local/lib"
+]
+
+# Find the first existing path
+def find_existing_path(paths):
+    for path in paths:
+        if os.path.exists(path):
+            return path
+    return paths[0]  # Default to first path if none exist
+
+portaudio_include_path = find_existing_path(portaudio_include_paths)
+portaudio_lib_path = find_existing_path(portaudio_lib_paths)
 
 setuptools.setup(
+    name='your_project_name',
+    version='0.1',
     setup_requires=['pbr>=1.8'],
     pbr=True,
+    install_requires=[
+        'requests',
+        'pyaudio',
+    ],
     # Add extra compilation arguments for PyAudio
     ext_modules=[
         setuptools.Extension(
