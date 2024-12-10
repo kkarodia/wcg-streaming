@@ -39,7 +39,24 @@ REGION_MAP = {
 transcription_queue = queue.Queue()
 final_transcript = []
 is_transcribing = False
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
+try:
+    # Dummy driver for headless environment
+    os.environ['SDL_AUDIODRIVER'] = 'dummy'
+    logging.info("Set SDL_AUDIODRIVER to dummy.")
+
+    # Initialize sounddevice
+    logging.info("Querying sound devices...")
+    print(sd.query_devices())  # This should show available devices
+    logging.info("Sounddevice initialized successfully.")
+
+    # Your main app logic here
+    logging.info("Starting main application...")
+    # Example: app.run()
+except Exception as e:
+    logging.error("Application failed to start.", exc_info=True)
+    raise e
 def send_transcript_to_webhook(transcript):
     """
     Send the transcript to the N8N webhook
