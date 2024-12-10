@@ -1,0 +1,7 @@
+build:
+  config:
+    HEROKU_BUILDPACK_APT: heroku/apt
+  packages:
+    - portaudio19-dev
+    - libportaudio2
+    - libportaudio0
