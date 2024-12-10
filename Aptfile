@@ -1,3 +1,4 @@
+snd-dummy
 libasound2-dev
 libportaudio2
 libportaudiocpp0
