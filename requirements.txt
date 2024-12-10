@@ -2,3 +2,5 @@
 websocket-client
 flask
 requests
+wheel
+setuptools
