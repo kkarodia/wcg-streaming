@@ -25,3 +25,8 @@ except ImportError:
 setuptools.setup(
     setup_requires=['pbr>=1.8'],
     pbr=True)
+
+extra_compile_args = [
+    "-I/usr/include/portaudio2",
+    "-L/usr/lib/x86_64-linux-gnu",
+]
