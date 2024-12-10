@@ -89,7 +89,7 @@ def read_audio(ws):
     
     try:
         # Try to get the default sample rate
-        RATE = int(sd.default.samplerate)
+        RATE = 44100
     except Exception:
         print("Could not determine default sample rate, using 44100")
         RATE = 44100
