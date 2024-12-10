@@ -14,6 +14,6 @@ setuptools.setup(
     pbr=True,
     install_requires=[
         'requests',
-        'pyaudio',
+        'sounddevice',
     ]
 )
