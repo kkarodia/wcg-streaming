@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 setuptools.setup(
-    name='your_project_name',
+    name='wcg-transcript',
     version='0.1',
     setup_requires=['pbr>=1.8'],
     pbr=True,
